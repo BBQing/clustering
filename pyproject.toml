@@ -1,0 +1,22 @@
+[tool.poetry]
+name = "clustering"
+version = "0.1.0"
+description = "Clustering CLI application demo"
+authors = ["simon.prochazka"]
+readme = "README.md"
+packages = [{include = "clustering", from="src"}]
+
+[tool.poetry.dependencies]
+python = "^3.11"
+numpy = "^1.26.4"
+scikit-learn = "^1.4.2"
+
+
+[tool.poetry.group.dev.dependencies]
+mypy = "^1.10.0"
+pytest = "^8.2.0"
+pylint = "^3.1.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
