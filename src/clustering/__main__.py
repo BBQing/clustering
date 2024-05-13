@@ -12,10 +12,14 @@ def main(
     reader: Reader = Provide[Container.reader],
     model=Provide[Container.model],
     writer: Writer = Provide[Container.writer],
+    config=Provide[Container.config],
 ):
+
+    model_kwargs = config["clustering"]["model_kwargs"]
     data = reader.read()
-    result = str(model)
-    writer.write(result)
+    model.set_params(**model_kwargs)
+    print(model)
+    writer.write("haha")
 
 
 if __name__ == "__main__":

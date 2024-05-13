@@ -1,67 +1,113 @@
 import os
 
 import yaml  # type: ignore
+from jsonschema import Draft202012Validator, validate
+
+schema = {
+    "type": "object",
+    "properties": {
+        "reader": {
+            "type": "object",
+            "properties": {
+                "path": {"type": "string"},
+                "format": {
+                    "type": "string",
+                    "enum": ["json", "numpy"],
+                },
+            },
+            "required": ["path", "format"],
+        },
+        "clustering": {
+            "type": "object",
+            "properties": {
+                "model": {
+                    "type": "string",
+                    "enum": ["kmeans", "birch", "bisecting_kmeans"],
+                },
+                "model_kwargs": {
+                    "allOf": [
+                        {
+                            "if": {"properties": {"model": {"const": "kmeans"}}},
+                            "then": {"$ref": "#/$defs/kmeans_kwargs"},
+                        },
+                        {
+                            "if": {"properties": {"model": {"const": "birch"}}},
+                            "then": {"$ref": "#/$defs/birch_kwargs"},
+                        },
+                        {
+                            "if": {
+                                "properties": {"model": {"const": "bisecting_kmeans"}}
+                            },
+                            "then": {"$ref": "#/$defs/bisecting_kmeans_kwargs"},
+                        },
+                    ],
+                },
+            },
+        },
+        "writer": {
+            "type": "object",
+            "properties": {
+                "path": {"type": "string"},
+                "format": {"type": "string", "enum": ["json", "numpy"]},
+            },
+            "required": ["format", "path"],
+        },
+    },
+    "required": ["reader", "clustering", "writer"],
+    "$defs": {
+        "kmeans_kwargs": {
+            "type": "object",
+            "properties": {
+                "n_clusters": {"type": "integer"},
+                "init": {"type": "string"},
+                "n_init": {"type": "integer"},
+                "max_iter": {"type": "integer"},
+                "tol": {"type": "number"},
+                "verbose": {"type": "integer"},
+                "random_state": {"type": "integer"},
+                "copy_x": {"type": "boolean"},
+                "algortihm": {"type": "string", "enum": ["lloyd", "elkan"]},
+            },
+            "additionalProperties": False,
+        },
+        "birch_kwargs": {
+            "type": "object",
+            "properties": {
+                "threshold": {"type": "number"},
+                "branching_factor": {"type": "integer"},
+                "n_clusters": {"type": "integer"},
+                "compute_labels": {"type": "boolean"},
+                "copy": {"type": "boolean"},
+            },
+            "additionalProperties": False,
+        },
+        "bisecting_kmeans_kwargs": {
+            "type": "object",
+            "properties": {
+                "n_clusters": {"type": "integer"},
+                "init": {"type": "string", "enum": ["kmeans++", "random"]},
+                "n_init": {"type": "integer"},
+                "random_state": {"type": "integer"},
+                "max_iter": {"type": "integer"},
+                "verbose": {"type": "integer"},
+                "tol": {"type": "number"},
+                "copy_x": {"type": "boolean"},
+                "algortihm": {"type": "string", "enum": ["lloyd", "elkan"]},
+                "bisecting_strategy": {
+                    "type": "string",
+                    "enum": ["biggest_inertia", "largest_cluster"],
+                },
+            },
+            "additionalProperties": False,
+        },
+    },
+}
 
 
 def parse_config(path: str) -> dict:
     with open(path, "r") as f:
         raw_config = yaml.safe_load(f)
 
-    validate_reader(raw_config)
-    validate_clustering(raw_config)
-    validate_writer(raw_config)
+    validate(raw_config, schema=schema, cls=Draft202012Validator)
 
     return raw_config
-
-
-def validate_reader(raw_config: dict):
-    if "reader" not in raw_config:
-        raw_config["reader"] = dict()
-    if raw_config["reader"] is None:
-        raise ValueError("Invalid 'reader' type - reader cannot be Nonetype")
-    reader = raw_config["reader"]
-
-    if "path" not in reader:
-        reader["path"] = "data.json"
-    if "format" not in reader:
-        reader["format"] = "json"
-    elif reader["format"] not in ["json", "numpy"]:
-        raise ValueError("Invalid reader format")
-
-
-def validate_writer(raw_config: dict):
-    if "writer" not in raw_config:
-        raw_config["writer"] = dict()
-    if raw_config["writer"] is None:
-        raise ValueError("Invalid 'writer' type - writer cannot be Nonetype")
-    writer = raw_config["writer"]
-
-    if "path" not in writer:
-        writer["path"] = "output"
-    if "format" not in writer:
-        writer["format"] = "numpy"
-    elif writer["format"] not in ["json", "numpy"]:
-        raise ValueError("Invalid writer format")
-
-
-def validate_clustering(raw_config: dict):
-    if "clustering" not in raw_config:
-        raise ValueError("Provide 'clustering' section")
-    if raw_config["clustering"] is None:
-        raise ValueError(
-            "'clustering' section is empty - provide non-empty key 'model'"
-        )
-    clustering = raw_config["clustering"]
-
-    if "model" not in clustering:
-        raise ValueError(
-            "Provide 'model' with value in ['kmeans', 'birch', 'bisecting_kmeans']"
-        )
-    if clustering["model"] not in ["kmeans", "birch", "bisecting_kmeans"]:
-        raise ValueError(
-            "Provide 'model' with value in ['kmeans', 'birch', 'bisecting_kmeans']"
-        )
-    if "model_kwargs" not in clustering:
-        clustering["model_kwargs"] = dict()
-    if clustering["model_kwargs"] is None:
-        clustering["model_kwargs"] = dict()

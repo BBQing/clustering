@@ -17,11 +17,9 @@ class Container(containers.DeclarativeContainer):
 
     model = providers.Selector(
         config.clustering.model,
-        kmeans=providers.Factory(KMeans, config.clustering.model_kwargs),
-        birch=providers.Factory(Birch, config.clustering.model_kwargs),
-        bisecting_kmeans=providers.Factory(
-            BisectingKMeans, **config.clustering.model_kwargs
-        ),
+        kmeans=providers.Factory(KMeans),
+        birch=providers.Factory(Birch),
+        bisecting_kmeans=providers.Factory(BisectingKMeans),
     )
 
     writer = providers.Selector(
