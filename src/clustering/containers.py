@@ -1,5 +1,5 @@
 from dependency_injector import containers, providers
-from sklearn.cluster import Birch, BisectingKMeans, KMeans
+from sklearn.cluster import Birch, BisectingKMeans, KMeans  # type: ignore
 
 from clustering.readers import JSONReader, NumpyReader
 from clustering.writers import JSONWriter, NumpyWriter
